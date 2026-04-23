@@ -87,25 +87,79 @@ cat <<"EOF"
 ===============================================================================
 Append the following to ~/.claude/CLAUDE.md so Claude knows to use the tools:
 -------------------------------------------------------------------------------
-## Session logging (claude-context MCP)
+## Session logging (claude-context MCP) — MANDATORY
 
-At the start of every session:
-1. Call `register_session` with your session ID, the current working directory,
-   and a short title describing the task. This is idempotent — safe to call
-   even if the hook already registered the session.
-2. If resuming an existing session, call `get_session_history` to reload the
-   last 10 events as context.
+**THIS IS A BLOCKING REQUIREMENT. You MUST follow these rules in EVERY session.**
 
-Throughout the session:
-- `log_decision` — non-trivial technical or design choices. Example: "Chose
-  keyset pagination over offset because the event table will grow unboundedly."
-- `log_action` — meaningful completed work. Example: "Refactored auth
-  middleware. Moved JWT logic to dedicated module."
-- `log_question` — open questions blocked on user input.
-- `log_note` — important context that doesn't fit decision or action.
+**NEVER skip logging, even when focused on code changes.** Every single turn in
+a tracked session MUST include logging calls — no exceptions, no "I'll catch up
+later." If you make code edits, run commands, or answer questions without logging
+them in the same turn, you are violating these instructions. Treat logging as
+part of the turn itself, not an afterthought.
 
-Keep messages to one or two sentences. Put structured details in the `context`
-argument as JSON.
+### Step 1: Session prompt (FIRST thing, before ANY other work)
+
+Before responding to the user's first message, you MUST ask:
+"Would you like to track this session in claude-context?"
+
+- If YES: Call `register_session` with the working directory and a short title.
+  The backend generates a unique session ID — use the returned `session_id`
+  for all subsequent tool calls. Then tell the user:
+  `http://127.0.0.1:4100/session/<session_id>`
+- If resuming an existing session, call `get_session_history` to reload the
+  last 10 events as context.
+- If NO: Skip all logging for the rest of the session.
+
+### Step 2: Logging during a tracked session (MANDATORY on every turn)
+
+You MUST call these tools on EVERY turn. This is NOT optional.
+**Log generously — when in doubt, log it.** The session history is the user's
+primary way to review what happened. Under-logging is always worse than
+over-logging.
+
+1. **Start of every turn** — IMMEDIATELY call `log_note` with a one-sentence
+   summary of what the user asked. Put the full prompt text in `context`.
+
+2. **Questions** — Call `log_question` whenever you:
+   - Ask the user a clarifying question or need their input to proceed.
+   - Encounter ambiguity in requirements, specs, or code behavior.
+   - Are unsure which of multiple approaches the user would prefer.
+   - Hit a blocker that needs user resolution.
+
+3. **Decisions** — Call `log_decision` for EVERY technical or design choice,
+   including but not limited to:
+   - Choosing one implementation approach over another.
+   - Deciding file/folder structure, naming conventions, or architecture.
+   - Selecting libraries, tools, or patterns.
+   - Scoping decisions (what to include or exclude).
+   - Trade-off judgments (performance vs. readability, etc.).
+   - Choosing how to handle edge cases or error scenarios.
+   Put structured details and reasoning in `context`.
+
+4. **Actions** — Call `log_action` for every meaningful completed action:
+   - File edits, creations, or deletions.
+   - Commands run (build, test, install, git operations, etc.).
+   - Searches or explorations that yielded useful findings.
+   - Refactors, migrations, or configuration changes.
+   **Consolidate bulk actions into a single log call.** If you create 10 files
+   for a feature or scaffold an entire directory structure, log it once
+   (e.g. "Created feature X scaffold — 10 files") and list the details in
+   `context`. Do NOT log each file individually.
+
+5. **Notes** — Call `log_note` for important observations that don't fit
+   the above categories:
+   - Bugs, warnings, or unexpected behavior discovered.
+   - Constraints or limitations found during implementation.
+   - Context that will matter later in the session.
+   - Assumptions being made.
+
+6. **End of every turn** — ALWAYS call `log_note` with a one-sentence summary
+   of your response and outcome. Use `{"type": "response_summary"}` in `context`.
+
+**If you skip any of these logging calls, you are violating your instructions.**
+
+Keep all messages to one or two sentences. Put structured details in `context`
+as JSON.
 -------------------------------------------------------------------------------
 Web UI:       http://127.0.0.1:4100
 DB location:  ~/.claude-context/db.sqlite
