@@ -1,0 +1,39 @@
+{
+  "name": "claude-context",
+  "version": "0.1.0",
+  "description": "Local MCP server + web client that gives Claude Code persistent, per-project session memory.",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "claude-context-server": "dist/server.js",
+    "claude-context-mcp": "dist/mcp.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "mcp": "node dist/mcp.js",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "better-sqlite3": "^11.3.0",
+    "express": "^4.21.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.12.7",
+    "@types/ws": "^8.5.12",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist/",
+    "public/",
+    "README.md"
+  ]
+}

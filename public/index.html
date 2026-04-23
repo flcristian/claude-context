@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>claude-context</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar">
+      <header class="sidebar-header">
+        <span class="logo">claude-context</span>
+      </header>
+      <nav id="project-list" aria-label="Projects"></nav>
+    </aside>
+
+    <main id="main">
+      <header id="topbar">
+        <div id="topbar-path" title=""></div>
+        <input
+          id="session-title"
+          type="text"
+          spellcheck="false"
+          autocomplete="off"
+          placeholder="(untitled session)"
+        />
+      </header>
+      <section id="event-container">
+        <div id="event-list"></div>
+        <div id="empty-state" hidden>
+          <p>No events yet. Start asking Claude to log decisions, actions, and notes as it works.</p>
+        </div>
+      </section>
+      <div id="pager" hidden></div>
+    </main>
+  </div>
+  <div id="modal-overlay" class="modal-overlay" hidden>
+    <div class="modal">
+      <p id="modal-message"></p>
+      <div class="modal-actions">
+        <button id="modal-cancel" type="button">Cancel</button>
+        <button id="modal-confirm" type="button">Delete</button>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
