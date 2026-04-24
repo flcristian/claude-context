@@ -255,6 +255,28 @@ html, body {
   background: var(--bg);
 }
 
+#copy-resume {
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+#copy-resume:hover {
+  color: var(--text);
+  border-color: var(--text-faint);
+}
+
+#copy-resume.copied {
+  color: var(--action);
+  border-color: var(--action);
+}
+
 /* --- Event container --- */
 
 #event-container {

@@ -16,6 +16,7 @@ export interface Session {
   id: string;
   project_id: string;
   title: string | null;
+  claude_session_id: string | null;
   created_at: number;
   last_active_at: number;
 }
@@ -37,6 +38,7 @@ export interface RegisterSessionArgs {
   session_id?: string;
   directory: string;
   title?: string;
+  claude_session_id?: string;
 }
 
 export interface RegisterSessionResult {

@@ -44,6 +44,10 @@ const TOOLS: ToolDef[] = [
           type: 'string',
           description: 'Optional short title describing the task for this session.',
         },
+        claude_session_id: {
+          type: 'string',
+          description: 'The Claude Code session ID (used for --resume). Pass your actual Claude Code session ID here.',
+        },
       },
       required: ['directory'],
       additionalProperties: false,

@@ -61,8 +61,9 @@ function createToolHandlers(db: Db, bus: EventBus): Record<ToolName, ToolHandler
           ? args.session_id
           : crypto.randomUUID();
       const title = typeof args?.title === 'string' && args.title.length > 0 ? args.title : undefined;
+      const claude_session_id = typeof args?.claude_session_id === 'string' && args.claude_session_id.length > 0 ? args.claude_session_id : undefined;
       const now = Date.now();
-      const result = db.upsertSession(session_id, directory, title, now);
+      const result = db.upsertSession(session_id, directory, title, claude_session_id, now);
       if (result.is_new) {
         bus.emitGlobal({ kind: 'session_created', session_id, project_id: result.project_id });
       }

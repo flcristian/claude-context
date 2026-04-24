@@ -158,7 +158,7 @@ function renderSidebar() {
           if (sessions) {
             state.currentSessionId = null;
             history.pushState(null, '', '/');
-            setTopbar({ path: '', title: '', sessionId: null });
+            setTopbar({ path: '', title: '', sessionId: null, claudeSessionId: null });
             const container = document.getElementById('event-container');
             const eventList = document.getElementById('event-list');
             eventList.replaceChildren();
@@ -261,7 +261,7 @@ async function renderProjectSessions(projectId, container) {
           state.currentSessionId = null;
           if (state.view) { state.view.destroy(); state.view = null; }
           history.pushState(null, '', '/');
-          setTopbar({ path: '', title: '', sessionId: null });
+          setTopbar({ path: '', title: '', sessionId: null, claudeSessionId: null });
           const eventList = document.getElementById('event-list');
           eventList.replaceChildren();
           document.getElementById('empty-state').hidden = false;
@@ -315,7 +315,7 @@ async function loadSession(sessionId) {
   const data = await state.view.init();
 
   if (!data) {
-    setTopbar({ path: '', title: '', sessionId });
+    setTopbar({ path: '', title: '', sessionId, claudeSessionId: null });
     return;
   }
 
@@ -323,6 +323,7 @@ async function loadSession(sessionId) {
     path: data.project?.directory ?? '',
     title: data.session?.title ?? '',
     sessionId,
+    claudeSessionId: data.session?.claude_session_id ?? null,
   });
 
   // Expand this project in the sidebar if it isn't already.
@@ -340,15 +341,25 @@ async function loadSession(sessionId) {
 
 // ---- Top bar ----
 
-function setTopbar({ path, title, sessionId }) {
+function setTopbar({ path, title, sessionId, claudeSessionId }) {
   const pathEl = document.getElementById('topbar-path');
   const titleEl = document.getElementById('session-title');
+  const copyBtn = document.getElementById('copy-resume');
+
   pathEl.textContent = truncatePath(path);
   pathEl.title = path;
 
   titleEl.value = title ?? '';
   titleEl.dataset.lastSaved = title ?? '';
   titleEl.disabled = !sessionId;
+
+  if (claudeSessionId) {
+    copyBtn.hidden = false;
+    copyBtn.dataset.claudeSessionId = claudeSessionId;
+  } else {
+    copyBtn.hidden = true;
+    copyBtn.dataset.claudeSessionId = '';
+  }
 }
 
 function wireTopbar() {
@@ -372,6 +383,24 @@ function wireTopbar() {
     if (e.key === 'Enter') {
       e.preventDefault();
       titleEl.blur();
+    }
+  });
+
+  const copyBtn = document.getElementById('copy-resume');
+  copyBtn.addEventListener('click', async () => {
+    const claudeId = copyBtn.dataset.claudeSessionId;
+    if (!claudeId) return;
+    const cmd = `claude --resume ${claudeId}`;
+    try {
+      await navigator.clipboard.writeText(cmd);
+      copyBtn.classList.add('copied');
+      copyBtn.textContent = 'copied!';
+      setTimeout(() => {
+        copyBtn.classList.remove('copied');
+        copyBtn.textContent = 'copy resume';
+      }, 1200);
+    } catch (err) {
+      console.error('clipboard failed', err);
     }
   });
 
@@ -406,7 +435,7 @@ async function boot() {
   if (id) {
     await loadSession(id);
   } else {
-    setTopbar({ path: '', title: '', sessionId: null });
+    setTopbar({ path: '', title: '', sessionId: null, claudeSessionId: null });
   }
 }
 

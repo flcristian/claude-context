@@ -18,6 +18,7 @@ export interface Db {
     sessionId: string,
     directory: string,
     title: string | undefined,
+    claudeSessionId: string | undefined,
     now: number,
   ): { project_id: string; session_id: string; is_new: boolean };
   insertEvent(
@@ -103,6 +104,7 @@ export function openDb(path: string): Db {
       id TEXT PRIMARY KEY,
       project_id TEXT NOT NULL REFERENCES projects(id),
       title TEXT,
+      claude_session_id TEXT,
       created_at INTEGER NOT NULL,
       last_active_at INTEGER NOT NULL
     );
@@ -119,6 +121,12 @@ export function openDb(path: string): Db {
     CREATE INDEX IF NOT EXISTS idx_events_session_desc ON events(session_id, id DESC);
   `);
 
+  // Migration: add claude_session_id column if missing.
+  const cols = db.pragma('table_info(sessions)') as { name: string }[];
+  if (!cols.some((c) => c.name === 'claude_session_id')) {
+    db.exec('ALTER TABLE sessions ADD COLUMN claude_session_id TEXT');
+  }
+
   const stmts = {
     getProjectByDir: db.prepare<[string], Project>(
       'SELECT id, directory, name, created_at FROM projects WHERE directory = ?',
@@ -130,10 +138,10 @@ export function openDb(path: string): Db {
       'INSERT INTO projects (id, directory, name, created_at) VALUES (?, ?, ?, ?)',
     ),
     getSession: db.prepare<[string], Session>(
-      'SELECT id, project_id, title, created_at, last_active_at FROM sessions WHERE id = ?',
+      'SELECT id, project_id, title, claude_session_id, created_at, last_active_at FROM sessions WHERE id = ?',
     ),
-    insertSession: db.prepare<[string, string, string | null, number, number]>(
-      'INSERT INTO sessions (id, project_id, title, created_at, last_active_at) VALUES (?, ?, ?, ?, ?)',
+    insertSession: db.prepare<[string, string, string | null, string | null, number, number]>(
+      'INSERT INTO sessions (id, project_id, title, claude_session_id, created_at, last_active_at) VALUES (?, ?, ?, ?, ?, ?)',
     ),
     updateSessionLastActive: db.prepare<[number, string]>(
       'UPDATE sessions SET last_active_at = ? WHERE id = ?',
@@ -203,6 +211,7 @@ export function openDb(path: string): Db {
       sessionId: string,
       directory: string,
       title: string | undefined,
+      claudeSessionId: string | undefined,
       now: number,
     ): { project_id: string; session_id: string; is_new: boolean } => {
       let project = stmts.getProjectByDir.get(directory) as Project | undefined;
@@ -215,7 +224,7 @@ export function openDb(path: string): Db {
 
       const existing = stmts.getSession.get(sessionId) as Session | undefined;
       if (!existing) {
-        stmts.insertSession.run(sessionId, project.id, title ?? null, now, now);
+        stmts.insertSession.run(sessionId, project.id, title ?? null, claudeSessionId ?? null, now, now);
         lastActiveCache.set(sessionId, now);
         return { project_id: project.id, session_id: sessionId, is_new: true };
       }
@@ -235,8 +244,8 @@ export function openDb(path: string): Db {
       db.close();
     },
 
-    upsertSession(sessionId, directory, title, now) {
-      return upsertSessionTxn(sessionId, directory, title, now);
+    upsertSession(sessionId, directory, title, claudeSessionId, now) {
+      return upsertSessionTxn(sessionId, directory, title, claudeSessionId, now);
     },
 
     insertEvent(sessionId, type, message, context, now) {

@@ -102,7 +102,8 @@ part of the turn itself, not an afterthought.
 Before responding to the user's first message, you MUST ask:
 "Would you like to track this session in claude-context?"
 
-- If YES: Call `register_session` with the working directory and a short title.
+- If YES: Call `register_session` with the working directory, a short title,
+  and your Claude Code session ID in the `claude_session_id` field.
   The backend generates a unique session ID — use the returned `session_id`
   for all subsequent tool calls. Then tell the user:
   `http://127.0.0.1:4100/session/<session_id>`
